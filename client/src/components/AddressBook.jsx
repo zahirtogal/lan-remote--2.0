@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Monitor, Trash2, Edit2, Plus, ArrowRight, X, Clock, Book } from 'lucide-react';
 
 const STORAGE_KEY = 'lan_remote_address_book';

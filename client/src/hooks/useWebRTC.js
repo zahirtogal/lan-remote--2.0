@@ -51,6 +51,7 @@ export function useWebRTC() {
     const incomingFile = useRef(null);
 
     const [fileTransferProgress, setFileTransferProgress] = useState(null);
+    const [messages, setMessages] = useState([]);
 
     useEffect(() => {
         localStreamRef.current = localStream;
@@ -148,6 +149,7 @@ export function useWebRTC() {
         setSessionRole(null);
         sessionRoleRef.current = null;
         iceCandidateQueue.current = [];
+        setMessages([]); // Sohbeti temizle
         setStatus('Sistem Boşta / Hazır');
     };
 
@@ -209,6 +211,7 @@ export function useWebRTC() {
                 disconnect();
             };
         } catch (err) {
+            console.error("Kabul etme (accept) hatası:", err);
             alert("Ekran paylaşımına izin verilmediği için bağlantı başarısız.");
             disconnect();
         }
@@ -235,10 +238,18 @@ export function useWebRTC() {
             if (typeof event.data === 'string') {
                 try {
                     const data = JSON.parse(event.data);
-                    if (window.api && window.api.sendRemoteControl) {
+                    if (window.api && window.api.sendRemoteControl && data.type !== 'chat') {
                         window.api.sendRemoteControl(data);
                     }
-                    if (data.type === 'file-start') {
+                    if (data.type === 'chat') {
+                        setMessages((prev) => [...prev, {
+                            id: data.timestamp + Math.random(),
+                            sender: data.sender,
+                            text: data.text,
+                            timestamp: data.timestamp,
+                            isMe: false
+                        }]);
+                    } else if (data.type === 'file-start') {
                         incomingFile.current = {
                             name: data.name,
                             size: data.size,
@@ -423,9 +434,38 @@ export function useWebRTC() {
         readSlice(0);
     };
 
+    const sendChatMessage = (text, senderName = 'Cihaz') => {
+        if (!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
+            return false;
+        }
+
+        const msgObj = {
+            type: 'chat',
+            text: text,
+            sender: senderName,
+            timestamp: Date.now()
+        };
+
+        try {
+            dataChannelRef.current.send(JSON.stringify(msgObj));
+            setMessages((prev) => [...prev, {
+                id: msgObj.timestamp + Math.random(),
+                sender: 'Siz',
+                text: text,
+                timestamp: msgObj.timestamp,
+                isMe: true
+            }]);
+            return true;
+        } catch (e) {
+            console.error("Mesaj gönderilemedi:", e);
+            return false;
+        }
+    };
+
     return {
         myId, status, connectToDevice, remoteStream, sendControlData,
         incomingConnection, acceptConnection, rejectConnection, disconnect,
-        sessionRole, sendFile, fileTransferProgress
+        sessionRole, sendFile, fileTransferProgress,
+        messages, sendChatMessage
     };
 }

@@ -1,23 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AddressBook from './components/AddressBook';
 import { useWebRTC } from './hooks/useWebRTC';
-import { Radio, ArrowRight, Folder, MessageSquare, Circle, Maximize, Minimize, X, ShieldAlert, Check, MonitorUp, MonitorOff, Activity, LogOut } from 'lucide-react';
+import { Radio, ArrowRight, Folder, MessageSquare, Circle, Maximize, Minimize, X, ShieldAlert, Check, MonitorUp, Activity } from 'lucide-react';
 
 function App() {
   const {
     myId, status, connectToDevice, remoteStream, sendControlData,
     incomingConnection, acceptConnection, rejectConnection, disconnect,
-    sessionRole, sendFile, fileTransferProgress
+    sessionRole, sendFile, fileTransferProgress,
+    messages, sendChatMessage
   } = useWebRTC();
-
-  const [targetInput, setTargetInput] = useState('');
-  const remoteVideoRef = useRef(null);
-  const viewerWrapperRef = useRef(null);
 
   // Toolbar state'leri
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+
+  const [chatInput, setChatInput] = useState('');
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+    if (!showChat && messages && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (!lastMsg.isMe) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setHasUnreadMessages(true);
+      }
+    }
+  }, [messages, showChat]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (showChat) setHasUnreadMessages(false);
+  }, [showChat]);
+
+  const [targetInput, setTargetInput] = useState('');
+  const remoteVideoRef = useRef(null);
+  const viewerWrapperRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -275,10 +298,16 @@ function App() {
                 <button
                   onClick={() => setShowChat(!showChat)}
                   title="Sohbet"
-                  className={`${showChat ? 'bg-primary/20 text-primary border-primary/30' : 'bg-transparent text-zinc-400 border-transparent hover:bg-zinc-800 hover:border-border'} px-2.5 py-1 rounded cursor-pointer border flex items-center gap-1.5 transition-colors text-xs font-medium`}
+                  className={`${showChat ? 'bg-primary/20 text-primary border-primary/30' : 'bg-transparent text-zinc-400 border-transparent hover:bg-zinc-800 hover:border-border'} relative px-2.5 py-1 rounded cursor-pointer border flex items-center gap-1.5 transition-colors text-xs font-medium`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>Sohbet</span>
+                  {hasUnreadMessages && (
+                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -386,9 +415,50 @@ function App() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="flex-1 p-5 text-zinc-500 text-xs text-center flex flex-col items-center justify-center">
-                    <LogOut className="w-8 h-8 mb-4 opacity-30" />
-                    Sohbet modülü entegrasyon için hazırlanıyor...
+                  <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3 custom-scrollbar bg-zinc-950/50">
+                    {messages && messages.length > 0 ? (
+                      messages.map((msg) => (
+                        <div key={msg.id} className={`flex flex-col max-w-[85%] ${msg.isMe ? 'self-end items-end' : 'self-start items-start'}`}>
+                          <div className={`px-3 py-2 rounded-2xl text-[13px] leading-relaxed shadow-sm break-words ${msg.isMe ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-zinc-800 text-zinc-200 rounded-tl-sm'}`}>
+                            {msg.text}
+                          </div>
+                          <span className="text-[10px] text-zinc-500 mt-1 px-1">
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-xs opacity-60">
+                        <MessageSquare className="w-8 h-8 mb-3 opacity-30" />
+                        Sohbet geçmişi boş...
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                  <div className="p-3 border-t border-white/10 bg-zinc-900/90 flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 bg-zinc-950 border border-border rounded-full px-4 text-sm text-zinc-200 focus:outline-none focus:border-primary/50 transition-colors"
+                      placeholder="Mesaj yazın..."
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && chatInput.trim()) {
+                          sendChatMessage(chatInput.trim(), 'İzleyici');
+                          setChatInput('');
+                        }
+                      }}
+                    />
+                    <button
+                      className="w-8 h-8 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center cursor-pointer transition-transform active:scale-95 disabled:opacity-50"
+                      disabled={!chatInput.trim()}
+                      onClick={() => {
+                        sendChatMessage(chatInput.trim(), 'İzleyici');
+                        setChatInput('');
+                      }}
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               )}
@@ -421,20 +491,96 @@ function App() {
 
         {/* GÖRÜNÜM 3: Ekran Paylaşan (Hedef - Target Seansı) */}
         {sessionRole === 'target' && (
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="bg-zinc-900 border border-border p-10 rounded-xl text-center max-w-[450px] w-full shadow-2xl">
+          <div className="flex-1 flex flex-col items-center justify-center relative">
+            <div className="bg-zinc-900 border border-border p-10 rounded-xl text-center max-w-[450px] w-full shadow-2xl z-10 transition-all">
               <MonitorUp className="w-16 h-16 text-green-500 mx-auto mb-6" />
               <h3 className="m-0 mb-4 text-zinc-100 text-xl font-bold">Masaüstünüz Paylaşılıyor</h3>
               <p className="text-zinc-400 mb-8 text-sm leading-relaxed">
                 Şu anda cihazınız uzak bir kullanıcı tarafından görüntüleniyor.
               </p>
-              <button
-                onClick={handleDisconnect}
-                className="w-full py-3 bg-destructive/20 hover:bg-destructive text-red-500 hover:text-white border border-red-900/50 hover:border-transparent rounded-lg cursor-pointer font-semibold flex gap-2 items-center justify-center text-sm transition-all shadow-lg"
-              >
-                <MonitorOff className="w-4 h-4" /> Paylaşımı Durdur
-              </button>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition-all border ${showChat ? 'bg-primary/20 text-primary border-primary/30' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-border'}`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Sohbeti {showChat ? 'Kapat' : 'Aç'}
+                  {hasUnreadMessages && !showChat && (
+                    <span className="flex h-2.5 w-2.5 ml-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={disconnect}
+                  className="w-full relative group overflow-hidden rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 font-semibold py-3 border border-red-500/20 transition-all active:scale-95"
+                >
+                  <div className="relative z-10 flex items-center justify-center gap-2">
+                    <ShieldAlert className="w-5 h-5" />
+                    Paylaşımı Durdur
+                  </div>
+                </button>
+              </div>
             </div>
+
+            {/* SOHBET MODALI (Drawer) - TARGET İÇİN */}
+            {showChat && (
+              <div className="absolute top-5 right-6 w-80 h-[80%] max-h-[450px] bg-zinc-900/90 backdrop-blur-xl rounded-xl border border-white/10 z-20 flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-right-8 fade-in">
+                <div className="p-4 border-b border-white/10 text-zinc-100 font-semibold flex justify-between items-center text-sm">
+                  <span className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Ağ Sohbeti</span>
+                  <button onClick={() => setShowChat(false)} className="text-zinc-500 hover:text-zinc-300 bg-transparent border-none p-1 cursor-pointer">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3 custom-scrollbar bg-zinc-950/50">
+                  {messages && messages.length > 0 ? (
+                    messages.map((msg) => (
+                      <div key={msg.id} className={`flex flex-col max-w-[85%] ${msg.isMe ? 'self-end items-end' : 'self-start items-start'}`}>
+                        <div className={`px-3 py-2 rounded-2xl text-[13px] leading-relaxed shadow-sm break-words ${msg.isMe ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-zinc-800 text-zinc-200 rounded-tl-sm'}`}>
+                          {msg.text}
+                        </div>
+                        <span className="text-[10px] text-zinc-500 mt-1 px-1">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-xs opacity-60">
+                      <MessageSquare className="w-8 h-8 mb-3 opacity-30" />
+                      Sohbet geçmişi boş...
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="p-3 border-t border-white/10 bg-zinc-900/90 flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 bg-zinc-950 border border-border rounded-full px-4 text-sm text-zinc-200 focus:outline-none focus:border-primary/50 transition-colors"
+                    placeholder="Mesaj yazın..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && chatInput.trim()) {
+                        sendChatMessage(chatInput.trim(), 'Hedef Cihaz');
+                        setChatInput('');
+                      }
+                    }}
+                  />
+                  <button
+                    className="w-8 h-8 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center cursor-pointer transition-transform active:scale-95 disabled:opacity-50"
+                    disabled={!chatInput.trim()}
+                    onClick={() => {
+                      sendChatMessage(chatInput.trim(), 'Hedef Cihaz');
+                      setChatInput('');
+                    }}
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

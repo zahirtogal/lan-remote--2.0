@@ -1,0 +1,184 @@
+﻿
+> client@0.0.0 lint
+> eslint .
+
+
+C:\Users\zahir\lan-remote\client\src\App.jsx
+    4:114  error  'MonitorOff' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+    4:136  error  'LogOut' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 no-unused-vars
+   22:10   error  Error: Cannot access variable before it is declared
+
+`showChat` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  20 |       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  21 |     }
+> 22 |     if (!showChat && messages && messages.length > 0) {
+     |          ^^^^^^^^ `showChat` accessed before it is declared
+  23 |       const lastMsg = messages[messages.length - 1];
+  24 |       if (!lastMsg.isMe) {
+  25 |         setHasUnreadMessages(true);
+
+  38 |   // Toolbar state'leri
+  39 |   const [isFullscreen, setIsFullscreen] = useState(false);
+> 40 |   const [showChat, setShowChat] = useState(false);
+     |          ^^^^^^^^ `showChat` is declared here
+  41 |   const [isRecording, setIsRecording] = useState(false);
+  42 |
+  43 |   const fileInputRef = useRef(null);                                                                                                                     react-hooks/immutability
+   25:9    error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  23 |       const lastMsg = messages[messages.length - 1];
+  24 |       if (!lastMsg.isMe) {
+> 25 |         setHasUnreadMessages(true);
+     |         ^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |       }
+  27 |     }
+  28 |   }, [messages, showChat]);  react-hooks/set-state-in-effect
+   31:19   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  29 |
+  30 |   useEffect(() => {
+> 31 |     if (showChat) setHasUnreadMessages(false);
+     |                   ^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |   }, [showChat]);
+  33 |
+  34 |   const [targetInput, setTargetInput] = useState('');           react-hooks/set-state-in-effect
+  111:29   error  'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+
+C:\Users\zahir\lan-remote\client\src\components\AddressBook.jsx
+   1:8  error  'React' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+  18:9  error  Error: Cannot access variable before it is declared
+
+`loadDevices` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  16 |
+  17 |     useEffect(() => {
+> 18 |         loadDevices();
+     |         ^^^^^^^^^^^ `loadDevices` accessed before it is declared
+  19 |         loadRecent();
+  20 |
+  21 |         const handleRecent = () => loadRecent();
+
+  24 |     }, []);
+  25 |
+> 26 |     const loadDevices = () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |         const saved = localStorage.getItem(STORAGE_KEY);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |         if (saved) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 |             try {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 30 |                 setDevices(JSON.parse(saved));
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 31 |             } catch (e) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 32 |                 console.error("Local storage veri ├º├Âz├╝mleme hatas─▒:", e);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 33 |             }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 34 |         }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 35 |     };
+     | ^^^^^^^ `loadDevices` is declared here
+  36 |
+  37 |     const loadRecent = () => {
+  38 |         const saved = localStorage.getItem('lan_remote_recent_connections');                                                                                                                                                                                                                                                                  react-hooks/immutability
+  19:9  error  Error: Cannot access variable before it is declared
+
+`loadRecent` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  17 |     useEffect(() => {
+  18 |         loadDevices();
+> 19 |         loadRecent();
+     |         ^^^^^^^^^^ `loadRecent` accessed before it is declared
+  20 |
+  21 |         const handleRecent = () => loadRecent();
+  22 |         window.addEventListener('recentConnectionsUpdated', handleRecent);
+
+  35 |     };
+  36 |
+> 37 |     const loadRecent = () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 38 |         const saved = localStorage.getItem('lan_remote_recent_connections');
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 39 |         if (saved) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 40 |             try {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 41 |                 setRecentConnections(JSON.parse(saved));
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 42 |             } catch (e) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 43 |                 console.error("Recent connections parse error:", e);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 44 |             }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 45 |         }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 46 |     };
+     | ^^^^^^^ `loadRecent` is declared here
+  47 |
+  48 |     const saveToStorage = (newDevices) => {
+  49 |         localStorage.setItem(STORAGE_KEY, JSON.stringify(newDevices));  react-hooks/immutability
+
+C:\Users\zahir\lan-remote\client\src\hooks\useWebRTC.js
+   66:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  64 |             localStorage.setItem('lan_remote_client_id', id);
+  65 |         }
+> 66 |         setMyId(id);
+     |         ^^^^^^^ Avoid calling setState() directly within an effect
+  67 |         myIdRef.current = id;
+  68 |
+  69 |         // VITE_WS_URL tan─▒ml─▒ysa onu kullan, yoksa buluttaki sunucuya ba─ƒlan                                                                                                                                                           react-hooks/set-state-in-effect
+  118:17  error  Error: Cannot access variable before it is declared
+
+`resetConnection` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  116 |                 setStatus('Ba─ƒlant─▒ iste─ƒi reddedildi.');
+  117 |                 alert('Kar┼ƒ─▒ taraf ba─ƒlant─▒y─▒ reddetti.');
+> 118 |                 resetConnection();
+      |                 ^^^^^^^^^^^^^^^ `resetConnection` accessed before it is declared
+  119 |             }
+  120 |             else if (data.type === 'disconnect') {
+  121 |                 setStatus('Ba─ƒlant─▒ kesildi.');
+
+  131 |
+  132 |     // Ba─ƒlant─▒y─▒ tamamen s─▒f─▒rlar ve kapat─▒r
+> 133 |     const resetConnection = () => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 134 |         if (pc.current) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 135 |             pc.current.close();
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 153 |         setStatus('Sistem Bo┼ƒta / Haz─▒r');
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 154 |     };
+      | ^^^^^^^ `resetConnection` is declared here
+  155 |
+  156 |     // Kar┼ƒ─▒ tarafa 'disconnect' g├Ânder ve ba─ƒlant─▒y─▒ temizle
+  157 |     const disconnect = () => {  react-hooks/immutability
+  213:18  error  'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+
+Ô£û 12 problems (12 errors, 0 warnings)
+
