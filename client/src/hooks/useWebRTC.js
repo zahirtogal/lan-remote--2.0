@@ -4,6 +4,10 @@ const configuration = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
         // Halka açık ücretsiz TURN sunucusu (Symmetric NAT aşmak için hayati önem taşır)
         {
             urls: "turn:openrelay.metered.ca:80",
@@ -294,20 +298,23 @@ export function useWebRTC() {
 
         pc.current.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log(`[ICE] Aday bulundu: ${event.candidate.candidate}`);
                 ws.current.send(JSON.stringify({
                     type: 'ice-candidate',
                     candidate: event.candidate,
                     targetId: currentTargetId.current,
                     id: myIdRef.current
                 }));
+            } else {
+                console.log("[ICE] Aday toplama süreci tamamlandı.");
             }
         };
 
         pc.current.oniceconnectionstatechange = () => {
             console.log("ICE Bağlantı Durumu:", pc.current.iceConnectionState);
             if (pc.current.iceConnectionState === 'failed' || pc.current.iceConnectionState === 'disconnected') {
-                setStatus('Bağlantı koptu veya NAT engeli aşılamadı (ICE Failed).');
-                setTimeout(() => disconnect(), 3000);
+                setStatus('Bağlantı kurulamadı (NAT/Firewall Engeli)');
+                // Kullanıcının yeniden deneme tetikleyebilmesi için otomatik kapatmayı devreden çıkarıyoruz
             }
         };
 

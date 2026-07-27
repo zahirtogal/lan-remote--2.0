@@ -337,13 +337,27 @@ function App() {
               {/* BEKLEME (LOADING) EKRANI */}
               {!remoteStream && sessionRole === 'viewer' && (
                 <div className="absolute inset-0 flex flex-col justify-center items-center bg-zinc-900 z-10 w-full px-8 text-center gap-6">
-                  {status.includes('Hata') || status.includes('koptu') || status.includes('Failed') ? (
-                    <X className="w-12 h-12 text-red-500/80 mb-2" />
+                  {status.includes('Hata') || status.includes('Engeli') || status.includes('koptu') || status.includes('Failed') ? (
+                    <div className="flex flex-col items-center">
+                      <X className="w-12 h-12 text-red-500/80 mb-4" />
+                      <button
+                        onClick={() => { disconnect(); handleConnectWithHistory(targetInput); }}
+                        className="mt-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 px-4 py-2 rounded-md font-semibold text-sm transition-all"
+                      >
+                        Yeniden Dene
+                      </button>
+                      <button
+                        onClick={disconnect}
+                        className="mt-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-md text-sm transition-all"
+                      >
+                        İptal Et ve Geri Dön
+                      </button>
+                    </div>
                   ) : (
                     <div className="w-12 h-12 rounded-full border-[3px] border-white/5 border-t-primary animate-spin"></div>
                   )}
-                  <p className="text-zinc-400 text-sm tracking-wide break-words max-w-md">
-                    {status.includes('Hata') || status.includes('koptu') || status.includes('Failed')
+                  <p className="text-zinc-400 text-sm tracking-wide break-words max-w-md mt-4">
+                    {status.includes('Hata') || status.includes('Engeli') || status.includes('koptu') || status.includes('Failed')
                       ? <span className="text-red-400 font-semibold">{status}</span>
                       : (status === 'Bağlantı Kuruldu! Medya bekleniyor...' ? status : 'Karşı tarafın onayı bekleniyor...\n' + status)}
                   </p>
