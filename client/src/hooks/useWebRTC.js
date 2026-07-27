@@ -53,6 +53,10 @@ export function useWebRTC() {
     const [fileTransferProgress, setFileTransferProgress] = useState(null);
     const [messages, setMessages] = useState([]);
 
+    // Multi-Monitor state'leri
+    const [remoteScreens, setRemoteScreens] = useState([]);
+    const [activeScreenId, setActiveScreenId] = useState(null);
+
     useEffect(() => {
         localStreamRef.current = localStream;
     }, [localStream]);
@@ -233,7 +237,15 @@ export function useWebRTC() {
 
     const setupDataChannel = (channel) => {
         channel.binaryType = 'arraybuffer';
-        channel.onopen = () => console.log('Data channel açıldı');
+        channel.onopen = async () => {
+            console.log('Data channel açıldı');
+            if (sessionRoleRef.current === 'target') {
+                if (window.api && window.api.getScreens) {
+                    const screens = await window.api.getScreens();
+                    channel.send(JSON.stringify({ type: 'screens-list', screens }));
+                }
+            }
+        };
         channel.onmessage = (event) => {
             if (typeof event.data === 'string') {
                 try {
@@ -249,6 +261,33 @@ export function useWebRTC() {
                             timestamp: data.timestamp,
                             isMe: false
                         }]);
+                    } else if (data.type === 'screens-list') {
+                        setRemoteScreens(data.screens);
+                        if (data.screens && data.screens.length > 0) {
+                            setActiveScreenId(data.screens[0].id);
+                        }
+                    } else if (data.type === 'switch-screen' && sessionRoleRef.current === 'target') {
+                        if (window.api && window.api.setScreen) {
+                            window.api.setScreen(data.screenId);
+                            navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+                                .then(newStream => {
+                                    const newVideoTrack = newStream.getVideoTracks()[0];
+                                    const senders = pc.current.getSenders();
+                                    const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+                                    if (videoSender) {
+                                        videoSender.replaceTrack(newVideoTrack);
+                                    }
+                                    setLocalStream(newStream);
+                                    if (localStreamRef.current) {
+                                        localStreamRef.current.getTracks().forEach(t => t.stop());
+                                    }
+                                    localStreamRef.current = newStream;
+
+                                    newVideoTrack.onended = () => {
+                                        disconnect();
+                                    };
+                                }).catch(e => console.error(e));
+                        }
                     } else if (data.type === 'file-start') {
                         incomingFile.current = {
                             name: data.name,
@@ -462,10 +501,18 @@ export function useWebRTC() {
         }
     };
 
+    const switchMonitor = (id) => {
+        setActiveScreenId(id);
+        if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+            dataChannelRef.current.send(JSON.stringify({ type: 'switch-screen', screenId: id }));
+        }
+    };
+
     return {
         myId, status, connectToDevice, remoteStream, sendControlData,
         incomingConnection, acceptConnection, rejectConnection, disconnect,
         sessionRole, sendFile, fileTransferProgress,
-        messages, sendChatMessage
+        messages, sendChatMessage,
+        remoteScreens, activeScreenId, switchMonitor
     };
 }

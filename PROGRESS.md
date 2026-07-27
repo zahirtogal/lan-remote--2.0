@@ -1,7 +1,7 @@
 # Proje İlerleme Durumu (PROGRESS.md)
 
 ## Proje Adı: LAN Remote (Profesyonel Uzaktan Masaüstü)
-**Mevcut Aşama:** Aşama 6 - WebRTC DataChannel Üzerinden Canlı Sohbet (Live Chat) Entegrasyonu
+**Mevcut Aşama:** Aşama 7 - Çoklu Ekran / Monitör Desteği (Multi-Monitor Switching)
 
 ### Tamamlanan Görevler
 * [x] Projenin sıfırdan AnyDesk tarzı mimariye göre yeniden planlanması.
@@ -16,7 +16,9 @@
 * [x] Kalıcı ID (Persistent Client ID) mekanizmasının kurulması.
 * [x] Render bulut sinyal sunucusu entegrasyonunun tamamlanması.
 * [x] WebRTC `RTCDataChannel` üzerinden parça tabanlı (chunking) güvenli dosya aktarımı ve indirme mekanizması.
+* [x] WebRTC `RTCDataChannel` üzerinden JSON tabanlı anlık Canlı Sohbet (Live Chat) entegrasyonu.
 
 ### Aktif Görev (Üzerinde Çalışılan)
-* [ ] Aktif seans içerisindeki **Canlı Sohbet (Live Chat)** modalının/panelinin `RTCDataChannel` üzerinden çalışır hale getirilmesi.
-* [ ] Mesajların JSON protokolüyle (tür ayrımı yapılarak) karşı tarafa anlık iletilmesi ve arayüzde (scroll/badge) dinamik gösterimi.
+* [ ] Hedef cihazda bulunan birden fazla ekranın (monitörün) Electron `desktopCapturer.getSources({ types: ['screen'] })` ile listelenmesi.
+* [ ] Araç çubuğu (Toolbar) üzerine bir Monitör Seçim Menüsü/Dropdown eklenerek istenen ekrana geçiş yapılabilmesi.
+* [ ] Seçilen yeni monitör akışının (MediaStream) mevcut WebRTC tüneli üzerinden karşı tarafa kesintisiz yansıtılması.

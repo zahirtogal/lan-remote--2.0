@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AddressBook from './components/AddressBook';
 import { useWebRTC } from './hooks/useWebRTC';
-import { Radio, ArrowRight, Folder, MessageSquare, Circle, Maximize, Minimize, X, ShieldAlert, Check, MonitorUp, Activity } from 'lucide-react';
+import { Radio, ArrowRight, Folder, MessageSquare, Circle, Maximize, Minimize, X, ShieldAlert, Check, MonitorUp, Activity, Monitor } from 'lucide-react';
 
 function App() {
   const {
     myId, status, connectToDevice, remoteStream, sendControlData,
     incomingConnection, acceptConnection, rejectConnection, disconnect,
     sessionRole, sendFile, fileTransferProgress,
-    messages, sendChatMessage
+    messages, sendChatMessage,
+    remoteScreens, activeScreenId, switchMonitor
   } = useWebRTC();
 
   // Toolbar state'leri
@@ -271,6 +272,26 @@ function App() {
                   {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
                   <span>{isFullscreen ? 'Daralt' : 'Tam Ekran'}</span>
                 </button>
+
+                {remoteScreens && remoteScreens.length > 1 && (
+                  <>
+                    <div className="w-px h-4 bg-border mx-1"></div>
+                    <div className="flex items-center gap-1.5 bg-zinc-950/50 rounded px-2 py-0.5 border border-border">
+                      <Monitor className="w-3.5 h-3.5 text-zinc-400" />
+                      <select
+                        value={activeScreenId || ''}
+                        onChange={(e) => switchMonitor(e.target.value)}
+                        className="bg-transparent text-zinc-200 text-xs focus:outline-none cursor-pointer w-24 truncate"
+                      >
+                        {remoteScreens.map(screen => (
+                          <option key={screen.id} value={screen.id} className="bg-zinc-900 text-sm">
+                            {screen.name || 'Menü'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 <div className="w-px h-4 bg-border mx-1"></div>
 

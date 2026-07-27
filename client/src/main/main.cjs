@@ -19,11 +19,34 @@ function createWindow() {
         }
     });
 
+    let selectedScreenId = null;
+
+    ipcMain.handle('get-screens', async () => {
+        try {
+            const sources = await desktopCapturer.getSources({ types: ['screen'] });
+            return sources.map(s => ({
+                id: s.id,
+                name: s.name
+            }));
+        } catch (e) {
+            console.error("Ekranlar alınamadı:", e);
+            return [];
+        }
+    });
+
+    ipcMain.on('set-screen', (event, screenId) => {
+        selectedScreenId = screenId;
+    });
+
     // YENİ: Electron için Ekran Paylaşım İzni
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
         desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
-            // Sistemdeki ilk (ana) ekranı otomatik olarak onayla ve paylaş
-            callback({ video: sources[0] });
+            let selectedSource = sources[0]; // Varsayılan olarak ilk ekranı paylaş
+            if (selectedScreenId) {
+                const found = sources.find(s => s.id === selectedScreenId);
+                if (found) selectedSource = found;
+            }
+            callback({ video: selectedSource });
         }).catch(err => {
             console.error('Ekran kaynakları alınamadı:', err);
         });
