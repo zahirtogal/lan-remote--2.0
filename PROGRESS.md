@@ -1,7 +1,7 @@
 # Proje İlerleme Durumu (PROGRESS.md)
 
 ## Proje Adı: LAN Remote (Profesyonel Uzaktan Masaüstü)
-**Mevcut Aşama:** Aşama 8 - Pano Eşitleme (Clipboard Synchronization) Entegrasyonu
+**Mevcut Aşama:** Aşama 9 - Otomatik Yeniden Bağlanma (Auto-Reconnect) Entegrasyonu
 
 ### Tamamlanan Görevler
 * [x] Projenin sıfırdan AnyDesk tarzı mimariye göre yeniden planlanması.
@@ -16,9 +16,10 @@
 * [x] Kalıcı ID (Persistent Client ID) mekanizmasının kurulması.
 * [x] Render bulut sinyal sunucusu entegrasyonunun tamamlanması.
 * [x] WebRTC `RTCDataChannel` üzerinden parça tabanlı (chunking) güvenli dosya aktarımı ve indirme mekanizması.
-* [x] WebRTC `RTCDataChannel` üzerinden JSON tabanlı anlık Canlı Sohbet (Live Chat) entegrasyonu.
+* [x] WebRTC `RTCDataChannel` üzerinden JSON tabanlı anlık Canlı Sohbet (Live Chat) entegrasyonru.
 * [x] Electron `desktopCapturer` ile Çoklu Ekran / Monitör Desteği ve anlık geçiş mekanizması.
+* [x] Electron `clipboard` ve `RTCDataChannel` ile Pano Eşitleme (Clipboard Sync) altyapısı.
 
 ### Aktif Görev (Üzerinde Çalışılan)
-* [ ] İki cihaz arasında kopyala-yapıştır (`Ctrl+C` / `Ctrl+V`) metin verilerinin arka planda eşzamanlanması.
-* [ ] Electron `clipboard` modülü ile sistem panosunun dinlenmesi ve `RTCDataChannel` üzerinden güvenli aktarımı.
+* [ ] WebRTC `iceConnectionState` ve `connectionState` değişimlerinin dinlenmesi (`disconnected` veya `failed` durumları).
+* [ ] Anlık ağ kopmalarında seansın hemen sonlandırılması yerine arka planda otomatik yeniden bağlanma (Auto-Reconnect / ICE restart) mekanizmasının kurulması.

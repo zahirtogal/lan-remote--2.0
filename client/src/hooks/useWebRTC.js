@@ -57,6 +57,45 @@ export function useWebRTC() {
     const [remoteScreens, setRemoteScreens] = useState([]);
     const [activeScreenId, setActiveScreenId] = useState(null);
 
+    const reconnectAttemptsRef = useRef(0);
+
+    const handleReconnect = async () => {
+        if (reconnectAttemptsRef.current >= 3) {
+            alert('Bağlantı tamamen koptu ve yeniden bağlanılamadı.');
+            resetConnection();
+            return;
+        }
+
+        reconnectAttemptsRef.current += 1;
+        setStatus(`Bağlantı koptu, ağ bekleniyor... (${reconnectAttemptsRef.current}/3)`);
+
+        if (sessionRoleRef.current === 'viewer') {
+            try {
+                await new Promise(r => setTimeout(r, 2500));
+
+                if (pc.current && pc.current.iceConnectionState === 'connected') {
+                    reconnectAttemptsRef.current = 0;
+                    setStatus('Bağlantı Kuruldu (Kurtarıldı)');
+                    return;
+                }
+
+                const offer = await pc.current.createOffer({ iceRestart: true });
+                await pc.current.setLocalDescription(offer);
+
+                ws.current.send(JSON.stringify({
+                    type: 'offer',
+                    offer: offer,
+                    targetId: currentTargetId.current,
+                    id: myIdRef.current
+                }));
+            } catch (e) {
+                console.error("Yeniden bağlanma hatası:", e);
+                // Bir sonraki deneme için tetikle
+                setTimeout(handleReconnect, 1000);
+            }
+        }
+    };
+
     useEffect(() => {
         localStreamRef.current = localStream;
     }, [localStream]);
@@ -94,8 +133,27 @@ export function useWebRTC() {
             const data = JSON.parse(event.data);
 
             if (data.type === 'offer') {
-                setStatus(`Gelen Bağlantı Talebi: ${data.id}`);
-                setIncomingConnection({ id: data.id, offer: data.offer });
+                if (pc.current && pc.current.signalingState !== 'closed' && sessionRoleRef.current === 'target') {
+                    // ICE Restart talebi geldi, sessiz sedasız answer döndür
+                    setStatus(`Yeniden Bağlantı Talebi (ICE Kurtarma)`);
+                    try {
+                        await pc.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+                        const answer = await pc.current.createAnswer();
+                        await pc.current.setLocalDescription(answer);
+
+                        ws.current.send(JSON.stringify({
+                            type: 'answer',
+                            answer: answer,
+                            targetId: data.id,
+                            id: myIdRef.current
+                        }));
+                    } catch (e) {
+                        console.error('ICE Restart Hatası:', e);
+                    }
+                } else {
+                    setStatus(`Gelen Bağlantı Talebi: ${data.id}`);
+                    setIncomingConnection({ id: data.id, offer: data.offer });
+                }
             }
             else if (data.type === 'answer') {
                 try {
@@ -378,10 +436,13 @@ export function useWebRTC() {
         };
 
         pc.current.oniceconnectionstatechange = () => {
-            console.log("ICE Bağlantı Durumu:", pc.current.iceConnectionState);
-            if (pc.current.iceConnectionState === 'failed' || pc.current.iceConnectionState === 'disconnected') {
-                setStatus('Bağlantı kurulamadı (NAT/Firewall Engeli)');
-                // Kullanıcının yeniden deneme tetikleyebilmesi için otomatik kapatmayı devreden çıkarıyoruz
+            const state = pc.current.iceConnectionState;
+            console.log("ICE Bağlantı Durumu:", state);
+            if (state === 'failed' || state === 'disconnected') {
+                handleReconnect();
+            } else if (state === 'connected') {
+                reconnectAttemptsRef.current = 0;
+                setStatus('Bağlantı Kuruldu (Aktif Seans)');
             }
         };
 
