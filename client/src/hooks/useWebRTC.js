@@ -38,8 +38,8 @@ export function useWebRTC() {
         setMyId(id);
         myIdRef.current = id;
 
-        // VITE_WS_URL tanımlıysa onu kullan, yoksa yerel sunucuya bağlan
-        const SIGNALING_SERVER_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+        // VITE_WS_URL tanımlıysa onu kullan, yoksa buluttaki sunucuya bağlan
+        const SIGNALING_SERVER_URL = import.meta.env.VITE_WS_URL || 'wss://lan-remote-2-0-backend.onrender.com';
         ws.current = new WebSocket(SIGNALING_SERVER_URL);
 
         ws.current.onopen = () => {
