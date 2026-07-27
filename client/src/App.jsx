@@ -335,11 +335,17 @@ function App() {
               />
 
               {/* BEKLEME (LOADING) EKRANI */}
-              {!remoteStream && (
-                <div className="absolute inset-0 flex flex-col justify-center items-center bg-zinc-900 z-10">
-                  <div className="w-12 h-12 rounded-full border-[3px] border-white/5 border-t-primary animate-spin"></div>
-                  <p className="text-zinc-400 mt-6 text-sm tracking-wide">
-                    Karşı tarafın onayı bekleniyor...
+              {!remoteStream && sessionRole === 'viewer' && (
+                <div className="absolute inset-0 flex flex-col justify-center items-center bg-zinc-900 z-10 w-full px-8 text-center gap-6">
+                  {status.includes('Hata') || status.includes('koptu') || status.includes('Failed') ? (
+                    <X className="w-12 h-12 text-red-500/80 mb-2" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full border-[3px] border-white/5 border-t-primary animate-spin"></div>
+                  )}
+                  <p className="text-zinc-400 text-sm tracking-wide break-words max-w-md">
+                    {status.includes('Hata') || status.includes('koptu') || status.includes('Failed')
+                      ? <span className="text-red-400 font-semibold">{status}</span>
+                      : (status === 'Bağlantı Kuruldu! Medya bekleniyor...' ? status : 'Karşı tarafın onayı bekleniyor...\n' + status)}
                   </p>
                 </div>
               )}

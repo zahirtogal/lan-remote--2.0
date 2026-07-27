@@ -34,6 +34,7 @@ export function useWebRTC() {
 
     // Rol: 'viewer' (Bağlanan) | 'target' (Ekranını Paylaşan) | null
     const [sessionRole, setSessionRole] = useState(null);
+    const sessionRoleRef = useRef(null);
 
     const ws = useRef(null);
     const pc = useRef(null);
@@ -77,8 +78,14 @@ export function useWebRTC() {
                 setIncomingConnection({ id: data.id, offer: data.offer });
             }
             else if (data.type === 'answer') {
-                await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-                setStatus('Bağlantı Kuruldu!');
+                try {
+                    await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    setStatus('Bağlantı Kuruldu! Medya bekleniyor...');
+                    console.log("Answer alındı ve uygulandı.");
+                } catch (e) {
+                    console.error("Answer setRemoteDescription Hatası: ", e);
+                    setStatus(`Hata (Answer): ${e.message}`);
+                }
 
                 while (iceCandidateQueue.current.length > 0) {
                     const cand = iceCandidateQueue.current.shift();
@@ -135,6 +142,7 @@ export function useWebRTC() {
         setRemoteStream(null);
         setIncomingConnection(null);
         setSessionRole(null);
+        sessionRoleRef.current = null;
         iceCandidateQueue.current = [];
         setStatus('Sistem Boşta / Hazır');
     };
@@ -160,6 +168,7 @@ export function useWebRTC() {
         setStatus(`Bağlantı kabul edildi: ${id}`);
         setIncomingConnection(null);
         setSessionRole('target'); // Biz hedefiz, kontrolü veriyoruz
+        sessionRoleRef.current = 'target';
 
         try {
             // Masaüstü ekranını yayına al
@@ -304,6 +313,9 @@ export function useWebRTC() {
 
         pc.current.onnegotiationneeded = async () => {
             try {
+                // SADECE VIEWER TEKLİF (OFFER) OLUŞTURABİLİR! Target teklif oluşturmamalı.
+                if (sessionRoleRef.current === 'target') return;
+
                 if (pc.current.signalingState !== 'stable') return;
 
                 const offer = await pc.current.createOffer();
@@ -328,6 +340,7 @@ export function useWebRTC() {
         setStatus(`Bağlanılıyor: ${targetId}...`);
         currentTargetId.current = targetId;
         setSessionRole('viewer'); // Biz bağlanan kişiyiz, Viewer (izleyici)
+        sessionRoleRef.current = 'viewer';
 
         if (!pc.current) {
             createPeerConnection();
