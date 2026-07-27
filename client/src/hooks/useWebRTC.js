@@ -281,10 +281,12 @@ export function useWebRTC() {
     const createPeerConnection = () => {
         pc.current = new RTCPeerConnection(configuration);
 
-        if (!dataChannelRef.current || dataChannelRef.current.readyState === 'closed') {
-            dataChannelRef.current = pc.current.createDataChannel('control', { negotiated: true, id: 0 });
+        // HEDEF (Target) CİHAZ İÇİN: Karşıdan (Viewer) gelen DataChannel bağlantısını dinle
+        pc.current.ondatachannel = (event) => {
+            console.log("Karşı taraftan in-band DataChannel geldi.");
+            dataChannelRef.current = event.channel;
             setupDataChannel(dataChannelRef.current);
-        }
+        };
 
         if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach(track => {
@@ -351,6 +353,10 @@ export function useWebRTC() {
 
         if (!pc.current) {
             createPeerConnection();
+
+            // İZLEYİCİ (Viewer) İÇİN: Bağlantıyı kuran taraf olarak in-band DataChannel oluştur.
+            dataChannelRef.current = pc.current.createDataChannel('control');
+            setupDataChannel(dataChannelRef.current);
 
             if (!localStreamRef.current) {
                 pc.current.addTransceiver('video', { direction: 'recvonly' });
