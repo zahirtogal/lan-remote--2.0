@@ -43,6 +43,9 @@ export function useWebRTC() {
     const myIdRef = useRef('');
     const iceCandidateQueue = useRef([]);
     const dataChannelRef = useRef(null);
+    const incomingFile = useRef(null);
+
+    const [fileTransferProgress, setFileTransferProgress] = useState(null);
 
     useEffect(() => {
         localStreamRef.current = localStream;
@@ -213,15 +216,51 @@ export function useWebRTC() {
     };
 
     const setupDataChannel = (channel) => {
+        channel.binaryType = 'arraybuffer';
         channel.onopen = () => console.log('Data channel açıldı');
         channel.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (window.api && window.api.sendRemoteControl) {
-                    window.api.sendRemoteControl(data);
+            if (typeof event.data === 'string') {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (window.api && window.api.sendRemoteControl) {
+                        window.api.sendRemoteControl(data);
+                    }
+                    if (data.type === 'file-start') {
+                        incomingFile.current = {
+                            name: data.name,
+                            size: data.size,
+                            mimeType: data.mimeType,
+                            chunks: [],
+                            received: 0
+                        };
+                        setFileTransferProgress(0);
+                    } else if (data.type === 'file-end') {
+                        if (incomingFile.current) {
+                            const blob = new Blob(incomingFile.current.chunks, { type: incomingFile.current.mimeType });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = incomingFile.current.name;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            a.remove();
+                            incomingFile.current = null;
+                            setTimeout(() => setFileTransferProgress(null), 2000);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Data channel parse hatası:", error);
                 }
-            } catch (error) {
-                console.error("Data channel parse hatası:", error);
+            } else {
+                // Binary (Dosya parçaları)
+                if (incomingFile.current) {
+                    incomingFile.current.chunks.push(event.data);
+                    incomingFile.current.received += event.data.byteLength;
+                    const progress = Math.floor((incomingFile.current.received / incomingFile.current.size) * 100);
+                    setFileTransferProgress(progress > 100 ? 100 : progress);
+                }
             }
         };
     };
@@ -305,9 +344,62 @@ export function useWebRTC() {
         }
     };
 
+    const sendFile = (file) => {
+        if (!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
+            return alert('Veri kanalı henüz açılmadı. Lütfen bağlantının stabil olmasını bekleyin.');
+        }
+
+        const CHUNK_SIZE = 16384;
+
+        setFileTransferProgress(0);
+
+        dataChannelRef.current.send(JSON.stringify({
+            type: 'file-start',
+            name: file.name,
+            size: file.size,
+            mimeType: file.type
+        }));
+
+        let offset = 0;
+
+        const readSlice = (o) => {
+            const slice = file.slice(o, o + CHUNK_SIZE);
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                if (!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
+                    setFileTransferProgress(null);
+                    return alert('Gönderim sırasında bağlantı koptu.');
+                }
+
+                dataChannelRef.current.send(e.target.result);
+                offset += CHUNK_SIZE;
+
+                const progress = Math.floor((offset / file.size) * 100);
+                if (progress <= 100) setFileTransferProgress(progress);
+
+                if (offset < file.size) {
+                    // Buffer kontrolü (Backpressure yönetimi)
+                    if (dataChannelRef.current.bufferedAmount > 65535) {
+                        setTimeout(() => readSlice(offset), 50);
+                    } else {
+                        readSlice(offset);
+                    }
+                } else {
+                    dataChannelRef.current.send(JSON.stringify({ type: 'file-end' }));
+                    setTimeout(() => setFileTransferProgress(null), 2000);
+                }
+            };
+
+            reader.readAsArrayBuffer(slice);
+        };
+
+        readSlice(0);
+    };
+
     return {
         myId, status, connectToDevice, remoteStream, sendControlData,
         incomingConnection, acceptConnection, rejectConnection, disconnect,
-        sessionRole
+        sessionRole, sendFile, fileTransferProgress
     };
 }

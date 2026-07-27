@@ -7,7 +7,7 @@ function App() {
   const {
     myId, status, connectToDevice, remoteStream, sendControlData,
     incomingConnection, acceptConnection, rejectConnection, disconnect,
-    sessionRole
+    sessionRole, sendFile, fileTransferProgress
   } = useWebRTC();
 
   const [targetInput, setTargetInput] = useState('');
@@ -257,7 +257,9 @@ function App() {
                   hidden
                   onChange={(e) => {
                     const file = e.target.files[0];
-                    if (file) console.log("Seçilen dosya (Şimdilik gönderilmiyor):", file.name);
+                    if (file) {
+                      sendFile(file);
+                    }
                     e.target.value = null;
                   }}
                 />
@@ -317,7 +319,7 @@ function App() {
                 setIsDraggingFile(false);
                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                   const file = e.dataTransfer.files[0];
-                  console.log("Sürükle-Bırak ile alınan dosya (Şimdilik gönderilmiyor):", file.name);
+                  sendFile(file);
                 }
               }}
               className="flex-1 min-h-0 bg-zinc-950 relative flex justify-center items-center"
@@ -339,6 +341,19 @@ function App() {
                   <p className="text-zinc-400 mt-6 text-sm tracking-wide">
                     Karşı tarafın onayı bekleniyor...
                   </p>
+                </div>
+              )}
+
+              {/* DOSYA AKTARIM BİLDİRİMİ (PROGRESS OSD) */}
+              {fileTransferProgress !== null && (
+                <div className="absolute top-20 right-6 bg-zinc-900 border border-zinc-700/50 rounded-lg shadow-2xl p-4 w-64 z-[999] animate-in slide-in-from-right-8 fade-in duration-300">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-semibold text-zinc-100 flex items-center gap-1.5"><Folder className="w-3.5 h-3.5 text-primary" /> Dosya Transferi</span>
+                    <span className="text-xs font-mono text-zinc-400">{fileTransferProgress}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary transition-all duration-300" style={{ width: `${fileTransferProgress}%` }}></div>
+                  </div>
                 </div>
               )}
 
@@ -370,7 +385,7 @@ function App() {
                     setIsDraggingFile(false);
                     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                       const file = e.dataTransfer.files[0];
-                      console.log("Sürükle-Bırak ile alınan dosya:", file.name);
+                      sendFile(file);
                     }
                   }}
                   className="absolute inset-x-4 inset-y-4 bg-zinc-900/80 backdrop-blur-md z-50 flex flex-col justify-center items-center border-[3px] border-dashed border-white/20 rounded-2xl"
