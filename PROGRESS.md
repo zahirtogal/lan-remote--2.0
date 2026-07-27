@@ -1,7 +1,7 @@
 # Proje İlerleme Durumu (PROGRESS.md)
 
 ## Proje Adı: LAN Remote (Profesyonel Uzaktan Masaüstü)
-**Mevcut Aşama:** Aşama 7 - Çoklu Ekran / Monitör Desteği (Multi-Monitor Switching)
+**Mevcut Aşama:** Aşama 8 - Pano Eşitleme (Clipboard Synchronization) Entegrasyonu
 
 ### Tamamlanan Görevler
 * [x] Projenin sıfırdan AnyDesk tarzı mimariye göre yeniden planlanması.
@@ -17,8 +17,8 @@
 * [x] Render bulut sinyal sunucusu entegrasyonunun tamamlanması.
 * [x] WebRTC `RTCDataChannel` üzerinden parça tabanlı (chunking) güvenli dosya aktarımı ve indirme mekanizması.
 * [x] WebRTC `RTCDataChannel` üzerinden JSON tabanlı anlık Canlı Sohbet (Live Chat) entegrasyonu.
+* [x] Electron `desktopCapturer` ile Çoklu Ekran / Monitör Desteği ve anlık geçiş mekanizması.
 
 ### Aktif Görev (Üzerinde Çalışılan)
-* [ ] Hedef cihazda bulunan birden fazla ekranın (monitörün) Electron `desktopCapturer.getSources({ types: ['screen'] })` ile listelenmesi.
-* [ ] Araç çubuğu (Toolbar) üzerine bir Monitör Seçim Menüsü/Dropdown eklenerek istenen ekrana geçiş yapılabilmesi.
-* [ ] Seçilen yeni monitör akışının (MediaStream) mevcut WebRTC tüneli üzerinden karşı tarafa kesintisiz yansıtılması.
+* [ ] İki cihaz arasında kopyala-yapıştır (`Ctrl+C` / `Ctrl+V`) metin verilerinin arka planda eşzamanlanması.
+* [ ] Electron `clipboard` modülü ile sistem panosunun dinlenmesi ve `RTCDataChannel` üzerinden güvenli aktarımı.

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, desktopCapturer, session, ipcMain } = require('electron');
+const { app, BrowserWindow, desktopCapturer, session, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const { mouse, Point, keyboard, Key, screen } = require('@nut-tree/nut-js');
 
@@ -20,6 +20,24 @@ function createWindow() {
     });
 
     let selectedScreenId = null;
+
+    let lastReadClipboard = clipboard.readText();
+    let lastWrittenClipboard = '';
+
+    setInterval(() => {
+        const currentText = clipboard.readText();
+        if (currentText && currentText !== lastReadClipboard && currentText !== lastWrittenClipboard) {
+            lastReadClipboard = currentText;
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('clipboard-changed', currentText);
+            }
+        }
+    }, 1000);
+
+    ipcMain.on('write-clipboard', (event, text) => {
+        lastWrittenClipboard = text;
+        clipboard.writeText(text);
+    });
 
     ipcMain.handle('get-screens', async () => {
         try {

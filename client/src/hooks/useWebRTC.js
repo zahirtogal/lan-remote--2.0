@@ -61,6 +61,17 @@ export function useWebRTC() {
         localStreamRef.current = localStream;
     }, [localStream]);
 
+    // Clipboard Listener (Pano değişikliklerini takip edip karşı tarafa atar)
+    useEffect(() => {
+        if (window.api && window.api.onClipboardChanged) {
+            window.api.onClipboardChanged((text) => {
+                if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+                    dataChannelRef.current.send(JSON.stringify({ type: 'clipboard', text }));
+                }
+            });
+        }
+    }, []);
+
     useEffect(() => {
         let id = localStorage.getItem('lan_remote_client_id');
         if (!id) {
@@ -265,6 +276,10 @@ export function useWebRTC() {
                         setRemoteScreens(data.screens);
                         if (data.screens && data.screens.length > 0) {
                             setActiveScreenId(data.screens[0].id);
+                        }
+                    } else if (data.type === 'clipboard') {
+                        if (window.api && window.api.writeClipboard) {
+                            window.api.writeClipboard(data.text);
                         }
                     } else if (data.type === 'switch-screen' && sessionRoleRef.current === 'target') {
                         if (window.api && window.api.setScreen) {
