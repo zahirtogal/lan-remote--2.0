@@ -59,6 +59,10 @@ ipcMain.on('remote-control', async (event, data) => {
     }
 });
 
+// WebRTC mDNS kısıtlamalarını devre dışı bırak (Yerel ağ bağlantılarının p2p çalışabilmesi için)
+app.commandLine.appendSwitch('enable-webrtc-hide-local-ips-with-mdns', 'false');
+app.commandLine.appendSwitch('disable-features', 'WebRtcHideLocalIpsWithMdns');
+
 app.whenReady().then(() => {
     createWindow();
 
