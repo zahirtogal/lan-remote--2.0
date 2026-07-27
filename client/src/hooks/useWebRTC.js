@@ -1,7 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 
 const configuration = {
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        // Halka açık ücretsiz TURN sunucusu (Symmetric NAT aşmak için hayati önem taşır)
+        {
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+        }
+    ]
 };
 
 export function useWebRTC() {
@@ -233,6 +252,14 @@ export function useWebRTC() {
                     targetId: currentTargetId.current,
                     id: myIdRef.current
                 }));
+            }
+        };
+
+        pc.current.oniceconnectionstatechange = () => {
+            console.log("ICE Bağlantı Durumu:", pc.current.iceConnectionState);
+            if (pc.current.iceConnectionState === 'failed' || pc.current.iceConnectionState === 'disconnected') {
+                setStatus('Bağlantı koptu veya NAT engeli aşılamadı (ICE Failed).');
+                setTimeout(() => disconnect(), 3000);
             }
         };
 
