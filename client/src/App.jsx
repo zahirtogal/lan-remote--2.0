@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AddressBook from './components/AddressBook';
 import { useWebRTC } from './hooks/useWebRTC';
-import { Radio, ArrowRight, Folder, MessageSquare, Circle, Maximize, Minimize, X, ShieldAlert, Check, MonitorUp, Activity, Monitor } from 'lucide-react';
+import { Radio, ArrowRight, Folder, MessageSquare, Circle, Maximize, Minimize, X, ShieldAlert, Check, MonitorUp, Activity, Monitor, Settings2 } from 'lucide-react';
 
 function App() {
   const {
@@ -9,7 +9,8 @@ function App() {
     incomingConnection, acceptConnection, rejectConnection, disconnect,
     sessionRole, sendFile, fileTransferProgress,
     messages, sendChatMessage,
-    remoteScreens, activeScreenId, switchMonitor
+    remoteScreens, activeScreenId, switchMonitor,
+    videoQuality, switchQuality
   } = useWebRTC();
 
   // Toolbar state'leri
@@ -292,6 +293,21 @@ function App() {
                     </div>
                   </>
                 )}
+
+                <div className="w-px h-4 bg-border mx-1"></div>
+
+                <div className="flex items-center gap-1.5 bg-zinc-950/50 rounded px-2 py-0.5 border border-border">
+                  <Settings2 className="w-3.5 h-3.5 text-zinc-400" />
+                  <select
+                    value={videoQuality}
+                    onChange={(e) => switchQuality(e.target.value)}
+                    className="bg-transparent text-zinc-200 text-xs focus:outline-none cursor-pointer w-auto"
+                  >
+                    <option value="Yüksek" className="bg-zinc-900 text-sm">Yüksek</option>
+                    <option value="Dengeli" className="bg-zinc-900 text-sm">Dengeli</option>
+                    <option value="Düşük" className="bg-zinc-900 text-sm">Düşük</option>
+                  </select>
+                </div>
 
                 <div className="w-px h-4 bg-border mx-1"></div>
 

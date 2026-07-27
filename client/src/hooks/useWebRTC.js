@@ -57,7 +57,49 @@ export function useWebRTC() {
     const [remoteScreens, setRemoteScreens] = useState([]);
     const [activeScreenId, setActiveScreenId] = useState(null);
 
+    const [videoQuality, setVideoQuality] = useState('Yüksek');
+    const currentQualityRef = useRef('Yüksek');
+
     const reconnectAttemptsRef = useRef(0);
+
+    const applyVideoQuality = async (quality, specificSender = null) => {
+        let videoSender = specificSender;
+        if (!videoSender && pc.current) {
+            const senders = pc.current.getSenders();
+            videoSender = senders.find(s => s.track && s.track.kind === 'video');
+        }
+        if (!videoSender) return;
+
+        try {
+            const parameters = videoSender.getParameters();
+            if (!parameters.encodings) parameters.encodings = [{}];
+
+            if (quality === 'Yüksek') {
+                parameters.encodings[0].maxBitrate = 5000000;
+                parameters.encodings[0].scaleResolutionDownBy = 1;
+                parameters.encodings[0].maxFramerate = 30;
+            } else if (quality === 'Dengeli') {
+                parameters.encodings[0].maxBitrate = 1500000;
+                parameters.encodings[0].scaleResolutionDownBy = 1.5;
+                parameters.encodings[0].maxFramerate = 20;
+            } else if (quality === 'Düşük') {
+                parameters.encodings[0].maxBitrate = 500000;
+                parameters.encodings[0].scaleResolutionDownBy = 2.0;
+                parameters.encodings[0].maxFramerate = 15;
+            }
+            await videoSender.setParameters(parameters);
+            console.log(`Video kalitesi '${quality}' olarak güncellendi.`);
+        } catch (e) {
+            console.error("Kalite değiştirme hatası:", e);
+        }
+    };
+
+    const switchQuality = (quality) => {
+        setVideoQuality(quality);
+        if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+            dataChannelRef.current.send(JSON.stringify({ type: 'change-quality', quality }));
+        }
+    };
 
     const handleReconnect = async () => {
         if (reconnectAttemptsRef.current >= 3) {
@@ -259,6 +301,8 @@ export function useWebRTC() {
                 createPeerConnection();
             }
 
+            await applyVideoQuality(currentQualityRef.current);
+
             await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.current.createAnswer();
             await pc.current.setLocalDescription(answer);
@@ -339,6 +383,9 @@ export function useWebRTC() {
                         if (window.api && window.api.writeClipboard) {
                             window.api.writeClipboard(data.text);
                         }
+                    } else if (data.type === 'change-quality' && sessionRoleRef.current === 'target') {
+                        currentQualityRef.current = data.quality;
+                        applyVideoQuality(data.quality);
                     } else if (data.type === 'switch-screen' && sessionRoleRef.current === 'target') {
                         if (window.api && window.api.setScreen) {
                             window.api.setScreen(data.screenId);
@@ -349,6 +396,7 @@ export function useWebRTC() {
                                     const videoSender = senders.find(s => s.track && s.track.kind === 'video');
                                     if (videoSender) {
                                         videoSender.replaceTrack(newVideoTrack);
+                                        applyVideoQuality(currentQualityRef.current, videoSender);
                                     }
                                     setLocalStream(newStream);
                                     if (localStreamRef.current) {
