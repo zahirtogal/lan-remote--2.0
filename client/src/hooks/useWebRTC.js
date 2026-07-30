@@ -57,8 +57,8 @@ export function useWebRTC() {
     const [remoteScreens, setRemoteScreens] = useState([]);
     const [activeScreenId, setActiveScreenId] = useState(null);
 
-    const [videoQuality, setVideoQuality] = useState('Yüksek');
-    const currentQualityRef = useRef('Yüksek');
+    const [videoQuality, setVideoQuality] = useState('Dengeli');
+    const currentQualityRef = useRef('Dengeli');
 
     const reconnectAttemptsRef = useRef(0);
 
@@ -301,7 +301,7 @@ export function useWebRTC() {
                 createPeerConnection();
             }
 
-            await applyVideoQuality(currentQualityRef.current);
+            applyVideoQuality(currentQualityRef.current);
 
             await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.current.createAnswer();
