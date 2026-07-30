@@ -72,7 +72,10 @@ export function useWebRTC() {
 
         try {
             const parameters = videoSender.getParameters();
-            if (!parameters.encodings) parameters.encodings = [{}];
+            if (!parameters.encodings || parameters.encodings.length === 0) {
+                console.log("Henüz encodings oluşturulmamış, kalite ayarı bekletiliyor.");
+                return;
+            }
 
             if (quality === 'Yüksek') {
                 parameters.encodings[0].maxBitrate = 5000000;
@@ -301,8 +304,6 @@ export function useWebRTC() {
                 createPeerConnection();
             }
 
-            applyVideoQuality(currentQualityRef.current);
-
             await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.current.createAnswer();
             await pc.current.setLocalDescription(answer);
@@ -313,6 +314,11 @@ export function useWebRTC() {
                 targetId: currentTargetId.current,
                 id: myIdRef.current
             }));
+
+            // Tünel müzakeresi tamamlandıktan sonra güvenli şekilde kaliteyi uygula
+            setTimeout(() => {
+                applyVideoQuality(currentQualityRef.current);
+            }, 1000);
 
             while (iceCandidateQueue.current.length > 0) {
                 const cand = iceCandidateQueue.current.shift();
@@ -466,7 +472,11 @@ export function useWebRTC() {
         }
 
         pc.current.ontrack = (event) => {
-            setRemoteStream(event.streams[0]);
+            if (event.streams && event.streams[0]) {
+                setRemoteStream(event.streams[0]);
+            } else {
+                setRemoteStream(new MediaStream([event.track]));
+            }
         };
 
         pc.current.onicecandidate = (event) => {
