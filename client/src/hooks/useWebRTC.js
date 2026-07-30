@@ -315,11 +315,6 @@ export function useWebRTC() {
                 id: myIdRef.current
             }));
 
-            // Tünel müzakeresi tamamlandıktan sonra güvenli şekilde kaliteyi uygula
-            setTimeout(() => {
-                applyVideoQuality(currentQualityRef.current);
-            }, 1000);
-
             while (iceCandidateQueue.current.length > 0) {
                 const cand = iceCandidateQueue.current.shift();
                 try {
@@ -467,7 +462,18 @@ export function useWebRTC() {
 
         if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach(track => {
-                pc.current.addTrack(track, localStreamRef.current);
+                // Varsayılan kalite (Dengeli) ile bağlantı başlar, böylece sonradan setParameters yapmaya gerek kalmaz.
+                const encodings = currentQualityRef.current === 'Yüksek'
+                    ? [{ maxBitrate: 5000000, maxFramerate: 30, scaleResolutionDownBy: 1 }]
+                    : currentQualityRef.current === 'Düşük'
+                        ? [{ maxBitrate: 500000, maxFramerate: 15, scaleResolutionDownBy: 2.0 }]
+                        : [{ maxBitrate: 1500000, maxFramerate: 20, scaleResolutionDownBy: 1.5 }]; // Dengeli
+
+                pc.current.addTransceiver(track, {
+                    direction: 'sendonly',
+                    streams: [localStreamRef.current],
+                    sendEncodings: encodings
+                });
             });
         }
 
