@@ -462,18 +462,33 @@ export function useWebRTC() {
 
         if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach(track => {
-                // Varsayılan kalite (Dengeli) ile bağlantı başlar, böylece sonradan setParameters yapmaya gerek kalmaz.
-                const encodings = currentQualityRef.current === 'Yüksek'
-                    ? [{ maxBitrate: 5000000, maxFramerate: 30, scaleResolutionDownBy: 1 }]
-                    : currentQualityRef.current === 'Düşük'
-                        ? [{ maxBitrate: 500000, maxFramerate: 15, scaleResolutionDownBy: 2.0 }]
-                        : [{ maxBitrate: 1500000, maxFramerate: 20, scaleResolutionDownBy: 1.5 }]; // Dengeli
+                const sender = pc.current.addTrack(track, localStreamRef.current);
 
-                pc.current.addTransceiver(track, {
-                    direction: 'sendonly',
-                    streams: [localStreamRef.current],
-                    sendEncodings: encodings
-                });
+                try {
+                    const parameters = sender.getParameters();
+                    if (!parameters.encodings || parameters.encodings.length === 0) {
+                        parameters.encodings = [{}];
+                    }
+
+                    if (currentQualityRef.current === 'Yüksek') {
+                        parameters.encodings[0].maxBitrate = 5000000;
+                        parameters.encodings[0].scaleResolutionDownBy = 1;
+                        parameters.encodings[0].maxFramerate = 30;
+                    } else if (currentQualityRef.current === 'Düşük') {
+                        parameters.encodings[0].maxBitrate = 500000;
+                        parameters.encodings[0].scaleResolutionDownBy = 2.0;
+                        parameters.encodings[0].maxFramerate = 15;
+                    } else { // Dengeli (varsayılan)
+                        parameters.encodings[0].maxBitrate = 1500000;
+                        parameters.encodings[0].scaleResolutionDownBy = 1.5;
+                        parameters.encodings[0].maxFramerate = 20;
+                    }
+
+                    // Asenkron ayarı uygula, bağlantı zincirini kitlemesin
+                    sender.setParameters(parameters).catch(e => console.error("İlk kalite parametresi uygulanamadı:", e));
+                } catch (e) {
+                    console.error("İlk kalite parametresi alınamadı:", e);
+                }
             });
         }
 
