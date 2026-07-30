@@ -150,7 +150,17 @@ export function useWebRTC() {
         if (window.api && window.api.onClipboardChanged) {
             window.api.onClipboardChanged((text) => {
                 if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
-                    dataChannelRef.current.send(JSON.stringify({ type: 'clipboard', text }));
+                    try {
+                        const payload = JSON.stringify({ type: 'clipboard', text });
+                        // WebRTC datachannel limitlerini (genelde 64-256KB) aşarsa çökmeyi engelle
+                        if (new Blob([payload]).size < 100000) {
+                            dataChannelRef.current.send(payload);
+                        } else {
+                            console.warn("Kopyalanan metin DataChannel limitleri için çok büyük, gönderilmiyor.");
+                        }
+                    } catch (e) {
+                        console.error("Clipboard gönderim hatası:", e);
+                    }
                 }
             });
         }
