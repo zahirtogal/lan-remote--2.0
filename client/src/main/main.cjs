@@ -70,8 +70,14 @@ function createWindow() {
         });
     });
 
-    // Geliştirme aşamasında React (Vite) sunucusunun ekranını yükleyeceğiz
-    mainWindow.loadURL('http://localhost:5173');
+    // Üretim (Packaged) veya Geliştirme (Dev) ortamı kontrolü
+    if (app.isPackaged) {
+        // Build edildiyse, paketlenmiş statik dosyaları (dist) yükle
+        mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
+    } else {
+        // Geliştirme aşamasında React (Vite) sunucusunu yükle
+        mainWindow.loadURL('http://localhost:5173');
+    }
 }
 
 // IPC komutlarını dinle
